@@ -21,6 +21,7 @@ export default function Result({ result, onReset }: ResultProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   const Icon = IconMap[result.icon as keyof typeof IconMap] || Compass;
 
@@ -57,28 +58,42 @@ export default function Result({ result, onReset }: ResultProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const handleShare = async () => {
-    const shareData = {
-      title: `I'm ${result.title}!`,
-      text: `I just found my coffee personality: ${result.title}. Find yours at Brew & Soul.`,
-      url: window.location.href,
-    };
+  const shareTitle = `I'm ${result.title}!`;
+  const shareText = `I just found my coffee personality: ${result.title}. Find yours at Brew & Soul.`;
+  const shareUrl = window.location.href;
 
+  const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
       } catch (error) {
         console.error('Error sharing:', error);
       }
     } else {
-      try {
-        await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-        setCopyFeedback(true);
-        setTimeout(() => setCopyFeedback(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy text: ', err);
-      }
+      setShowShareMenu(!showShareMenu);
     }
+  };
+
+  const shareToTwitter = () => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+  };
+
+  const shareToFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
+  };
+
+  const shareToInstagram = () => {
+    // Instagram doesn't have a direct URL share intent for posts, but we can copy and redirect
+    navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+    setCopyFeedback(true);
+    setTimeout(() => {
+      setCopyFeedback(false);
+      window.open('https://www.instagram.com/', '_blank');
+    }, 1500);
   };
 
   const handleSubmitEmail = (e: React.FormEvent) => {
@@ -236,29 +251,61 @@ export default function Result({ result, onReset }: ResultProps) {
           <span>See Our Full Menu</span>
         </motion.a>
 
-        <div className="grid grid-cols-2 gap-3">
-          <motion.button
-            id="share-button"
-            onClick={handleShare}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`flex items-center justify-center space-x-2 py-4 border border-coffee/20 rounded-2xl font-medium cursor-pointer transition-colors ${copyFeedback ? 'bg-olive text-cream border-olive' : 'text-coffee'}`}
-          >
-            {copyFeedback ? (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Copied!</span>
-              </>
-            ) : (
-              <>
-                {navigator.share ? <Share2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                <span>{navigator.share ? 'Share' : 'Copy Link'}</span>
-              </>
-            )}
-          </motion.button>
+        <div className="flex flex-col gap-3">
+          <div className="relative">
+            <motion.button
+              id="share-button"
+              onClick={handleShare}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`flex items-center justify-center space-x-2 w-full py-4 border border-coffee/20 rounded-2xl font-medium cursor-pointer transition-all duration-300 ${copyFeedback ? 'bg-olive text-cream border-olive' : 'text-coffee bg-white/50'}`}
+            >
+              {copyFeedback ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Link Copied for Instagram</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4" />
+                  <span>Share My Result</span>
+                </>
+              )}
+            </motion.button>
+
+            <AnimatePresence>
+              {showShareMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute bottom-full mb-3 left-0 w-full bg-white border border-beige rounded-2xl p-2 shadow-2xl z-20 grid grid-cols-3 gap-2"
+                >
+                  <button onClick={shareToInstagram} className="flex flex-col items-center py-3 hover:bg-beige rounded-xl transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-white mb-1">
+                      <Share2 className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] uppercase tracking-tighter">Insta</span>
+                  </button>
+                  <button onClick={shareToTwitter} className="flex flex-col items-center py-3 hover:bg-beige rounded-xl transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white mb-1">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-tighter">X / Twitter</span>
+                  </button>
+                  <button onClick={shareToFacebook} className="flex flex-col items-center py-3 hover:bg-beige rounded-xl transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-[#1877F2] flex items-center justify-center text-white mb-1">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-tighter">Facebook</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           
           <motion.button
             id="reset-button"
