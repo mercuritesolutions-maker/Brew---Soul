@@ -1,7 +1,8 @@
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useSpring, useTransform } from 'motion/react';
 import { Result as ResultType } from '../types';
-import { Compass, Heart, Palette, Sun, Share2, Menu as MenuIcon, ArrowRight, Mail, CheckCircle2, Copy } from 'lucide-react';
-import { useState } from 'react';
+import { Compass, Heart, Palette, Sun, Share2, Menu as MenuIcon, ArrowRight, Mail, CheckCircle2, Copy, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 
 interface ResultProps {
   result: ResultType;
@@ -22,6 +23,39 @@ export default function Result({ result, onReset }: ResultProps) {
   const [copyFeedback, setCopyFeedback] = useState(false);
 
   const Icon = IconMap[result.icon as keyof typeof IconMap] || Compass;
+
+  useEffect(() => {
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval: any = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#A0522D', '#F5F2ED', '#3C2A21']
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#A0522D', '#F5F2ED', '#3C2A21']
+      });
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleShare = async () => {
     const shareData = {
@@ -65,30 +99,43 @@ export default function Result({ result, onReset }: ResultProps) {
       animate={{ opacity: 1 }}
       className="max-w-md w-full space-y-10 pb-12"
     >
-      <div className="text-center space-y-6">
+      <div className="text-center space-y-6 relative">
         <motion.div
           initial={{ scale: 0, rotate: -20 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', damping: 15, stiffness: 200, delay: 0.2 }}
-          className="mx-auto w-24 h-24 rounded-3xl bg-terracotta/10 flex items-center justify-center text-terracotta border border-terracotta/20 shadow-xl shadow-terracotta/5"
+          transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
+          className="mx-auto w-24 h-24 rounded-3xl bg-terracotta/10 flex items-center justify-center text-terracotta border border-terracotta/20 shadow-xl shadow-terracotta/5 relative z-10"
         >
           <Icon className="w-12 h-12" />
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0, 1, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute -inset-4 bg-terracotta/5 rounded-full -z-10"
+          />
         </motion.div>
 
         <div className="space-y-2">
-          <motion.span 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="uppercase tracking-[0.2em] text-xs font-bold text-olive"
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, type: 'spring' }}
+            className="flex items-center justify-center space-x-2"
           >
-            You are
-          </motion.span>
+            <Sparkles className="w-3 h-3 text-terracotta" />
+            <span className="uppercase tracking-[0.3em] text-[10px] font-bold text-olive">Revealed</span>
+            <Sparkles className="w-3 h-3 text-terracotta" />
+          </motion.div>
+          
           <motion.h2 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-5xl md:text-6xl font-serif"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ 
+              delay: 0.4,
+              type: 'spring',
+              stiffness: 400,
+              damping: 15
+            }}
+            className="text-5xl md:text-6xl font-serif tracking-tight"
           >
             {result.title}
           </motion.h2>

@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Coffee } from 'lucide-react';
+import { Coffee, ArrowRight } from 'lucide-react';
 
 interface WelcomeProps {
   onStart: () => void;
@@ -58,15 +58,32 @@ export default function Welcome({ onStart }: WelcomeProps) {
 
       <motion.button
         id="start-quiz-button"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ 
+          delay: 0.9,
+          type: "spring",
+          stiffness: 400,
+          damping: 10
+        }}
+        whileHover={{ 
+          scale: 1.05, 
+          backgroundColor: '#3C2A21',
+          boxShadow: '0 20px 25px -5px rgba(60, 42, 33, 0.2)' 
+        }}
+        whileTap={{ scale: 0.95 }}
         onClick={onStart}
-        className="w-full py-5 bg-coffee text-cream rounded-2xl font-medium text-lg shadow-xl shadow-coffee/10 transition-shadow hover:shadow-2xl hover:shadow-coffee/20 cursor-pointer"
+        className="group relative w-full py-5 bg-coffee text-cream rounded-2xl font-bold text-xl shadow-xl shadow-coffee/10 cursor-pointer overflow-hidden transition-all"
       >
-        Begin Exploration
+        <span className="relative z-10 flex items-center justify-center space-x-2">
+          <span>Begin Exploration</span>
+          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+        </span>
+        <motion.div 
+          className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent"
+          animate={{ x: ['-100%', '100%'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        />
       </motion.button>
     </motion.div>
   );
